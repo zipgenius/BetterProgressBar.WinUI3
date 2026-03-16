@@ -1,0 +1,176 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ZipGenius.BetterProgressBar">
+
+    <Style TargetType="local:BetterProgressBar">
+        <Setter Property="HorizontalAlignment"  Value="Stretch" />
+        <Setter Property="VerticalAlignment"    Value="Center"  />
+        <Setter Property="BarHeight"            Value="8"       />
+        <Setter Property="FillThickness"        Value="0"       />
+        <Setter Property="Minimum"              Value="0"       />
+        <Setter Property="Maximum"              Value="100"     />
+        <Setter Property="Value"                Value="0"       />
+        <Setter Property="TickFrequency"        Value="10"      />
+        <Setter Property="Ticks"                Value="None"    />
+        <Setter Property="ShowPercentage"       Value="False"   />
+        <Setter Property="SyncTaskbar"          Value="False"   />
+        <Setter Property="ProgressState"        Value="Normal"  />
+        <Setter Property="Theme"                Value="Windows11"/>
+        <Setter Property="FontSize"             Value="12"      />
+        <Setter Property="FontWeight"           Value="SemiBold"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:BetterProgressBar">
+                    <Grid x:Name="PART_RootGrid">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"    />
+                            <!-- Fixed width: always holds "100%" without resizing,
+                                 eliminating the column-resize flicker when digit count changes. -->
+                            <ColumnDefinition Width="48" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Bar area -->
+                        <Grid Grid.Column="0"
+                              VerticalAlignment="Center">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Ticks above -->
+                            <Canvas x:Name="PART_TicksAbove"
+                                    Grid.Row="0"
+                                    Height="16"
+                                    Margin="0,0,0,5"
+                                    Visibility="Collapsed"
+                                    HorizontalAlignment="Stretch" />
+
+                            <!-- Win7 outer border wrapper (transparent for Win11/Win10, styled in code for Win7) -->
+                            <Border x:Name="PART_Win7Border"
+                                    Grid.Row="1"
+                                    CornerRadius="0"
+                                    BorderThickness="0"
+                                    BorderBrush="Transparent"
+                                    Padding="0">
+
+                                <!-- Track grid: background + fill container + indeterminate bar -->
+                                <Grid x:Name="PART_TrackGrid">
+
+                                    <!-- Track background -->
+                                    <Border x:Name="PART_TrackBorder"
+                                            CornerRadius="0"
+                                            HorizontalAlignment="Stretch" />
+
+                                    <!-- Fill container: Width/Height set in code-behind.
+                                         FillRect + ShimmerRect + GlassHighlight + StripeCanvas
+                                         are all children, so they are clipped to the fill area. -->
+                                    <Grid x:Name="PART_FillContainer"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center"
+                                          Width="0">
+
+                                        <!-- Solid fill rectangle -->
+                                        <Rectangle x:Name="PART_FillRect"
+                                                   HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                   RadiusX="0"
+                                                   RadiusY="0" />
+
+                                        <!-- Shimmer: sweeps across fill area (Win10 / Win7) -->
+                                        <Rectangle x:Name="PART_ShimmerRect"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Stretch"
+                                                   Visibility="Collapsed"
+                                                   IsHitTestVisible="False" />
+
+                                        <!-- Glass highlight: white gradient band in upper half (Win7) -->
+                                        <Rectangle x:Name="PART_GlassHighlight"
+                                                   HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Top"
+                                                   Visibility="Collapsed"
+                                                   IsHitTestVisible="False" />
+
+                                        <!-- Stripe canvas (reserved, currently unused) -->
+                                        <Canvas x:Name="PART_StripeCanvas"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch"
+                                                Visibility="Collapsed"
+                                                IsHitTestVisible="False" />
+                                    </Grid>
+
+
+                                    <!-- Win7 vignette: horizontal dark-edge overlay on the track ends -->
+                                    <Rectangle x:Name="PART_Win7Vignette"
+                                               HorizontalAlignment="Stretch"
+                                               VerticalAlignment="Stretch"
+                                               Visibility="Collapsed"
+                                               IsHitTestVisible="False" />
+
+                                    <!-- Indeterminate bar: shown only in Indeterminate state -->
+                                    <ProgressBar x:Name="PART_InnerProgressBar"
+                                                 Minimum="0"
+                                                 Maximum="100"
+                                                 Value="0"
+                                                 IsIndeterminate="False"
+                                                 HorizontalAlignment="Stretch"
+                                                 VerticalAlignment="Center"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Visibility="Collapsed" />
+
+                                </Grid>
+                            </Border>
+
+                            <!-- Ticks below -->
+                            <Canvas x:Name="PART_TicksBelow"
+                                    Grid.Row="2"
+                                    Height="16"
+                                    Margin="0,5,0,0"
+                                    Visibility="Collapsed"
+                                    HorizontalAlignment="Stretch" />
+                        </Grid>
+
+                        <!-- Percentage label -->
+                        <TextBlock x:Name="PART_PercentageText"
+                                   Grid.Column="1"
+                                   Margin="14,0,0,0"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Left"
+                                   TextAlignment="Left"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   FontWeight="{TemplateBinding FontWeight}"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   IsHitTestVisible="False"
+                                   Visibility="Collapsed"
+                                   Text="0%" />
+
+                        <!-- Visual state groups -->
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="ProgressState">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="Warning" />
+                                <VisualState x:Name="Error" />
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="PART_TrackBorder.Background" Value="#FFD0D0D0" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="Indeterminate">
+                                    <VisualState.Setters>
+                                        <Setter Target="PART_InnerProgressBar.Visibility"      Value="Visible"   />
+                                        <Setter Target="PART_InnerProgressBar.IsIndeterminate" Value="True"      />
+                                        <Setter Target="PART_FillRect.Visibility"              Value="Collapsed" />
+                                    </VisualState.Setters>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

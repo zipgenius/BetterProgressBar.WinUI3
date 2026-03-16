@@ -1,0 +1,43 @@
+name: Publish NuGet
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.x
+            9.x
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore
+        run: dotnet restore BetterProgressBar.WinUI3/BetterProgressBar.WinUI3.csproj
+
+      - name: Build
+        run: dotnet build BetterProgressBar.WinUI3/BetterProgressBar.WinUI3.csproj --no-restore -c Release
+
+      - name: Pack
+        run: dotnet pack BetterProgressBar.WinUI3/BetterProgressBar.WinUI3.csproj --no-build -c Release -o ./artifacts
+
+      - name: Push to NuGet
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          $packages = Get-ChildItem -Path ./artifacts -Filter *.nupkg
+          foreach ($pkg in $packages) {
+            dotnet nuget push $pkg.FullName --api-key $env:NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+          }

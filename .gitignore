@@ -1,0 +1,25 @@
+## .NET / MSBuild
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.DotSettings.user
+
+## NuGet artifacts
+artifacts/
+*.nupkg
+*.snupkg
+
+## JetBrains Rider
+.idea/
+
+## VS Code
+.vscode/
+
+## macOS
+.DS_Store
+
+## Windows
+Thumbs.db
+Desktop.ini

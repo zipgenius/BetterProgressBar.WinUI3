@@ -1,0 +1,88 @@
+<Window
+    x:Class="BetterProgressBar.Demo.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ctrl="using:ZipGenius.BetterProgressBar"
+    Title="BetterProgressBar.WinUI3 v0.6.0 – Demo">
+
+    <ScrollViewer Padding="32,24">
+        <StackPanel Spacing="20">
+
+            <TextBlock Text="BetterProgressBar.WinUI3 v0.6.0" Style="{StaticResource TitleTextBlockStyle}" />
+
+            <!-- ── Theme: Windows 11 (default) ──────────────────────────── -->
+            <TextBlock Text="Theme: Windows 11 (default)" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <ctrl:BetterProgressBar Value="65" Theme="Windows11" ProgressState="Normal" />
+            <ctrl:BetterProgressBar Value="45" Theme="Windows11" ProgressState="Warning" />
+            <ctrl:BetterProgressBar Value="80" Theme="Windows11" ProgressState="Error" />
+            <ctrl:BetterProgressBar Value="50" Theme="Windows11" ProgressState="Disabled" />
+            <ctrl:BetterProgressBar              Theme="Windows11" ProgressState="Indeterminate" />
+
+            <!-- ── Theme: Windows 10 ────────────────────────────────────── -->
+            <TextBlock Text="Theme: Windows 10" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <ctrl:BetterProgressBar Value="65" Theme="Windows10" ProgressState="Normal" />
+            <ctrl:BetterProgressBar Value="45" Theme="Windows10" ProgressState="Warning" />
+            <ctrl:BetterProgressBar Value="80" Theme="Windows10" ProgressState="Error" />
+            <ctrl:BetterProgressBar Value="50" Theme="Windows10" ProgressState="Disabled" />
+            <ctrl:BetterProgressBar              Theme="Windows10" ProgressState="Indeterminate" />
+
+            <!-- ── Theme: Windows 10 with percentage ────────────────────── -->
+            <TextBlock Text="Theme: Windows 10 with percentage label"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+            <ctrl:BetterProgressBar Value="60" Theme="Windows10" ShowPercentage="True" />
+
+
+            <!-- ── Theme: Windows 7 ─────────────────────────────────────────── -->
+            <TextBlock Text="Theme: Windows 7" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <ctrl:BetterProgressBar Value="65" Theme="Windows7" ProgressState="Normal" />
+            <ctrl:BetterProgressBar Value="45" Theme="Windows7" ProgressState="Warning" />
+            <ctrl:BetterProgressBar Value="80" Theme="Windows7" ProgressState="Error" />
+            <ctrl:BetterProgressBar Value="50" Theme="Windows7" ProgressState="Disabled" />
+            <ctrl:BetterProgressBar              Theme="Windows7" ProgressState="Indeterminate" />
+            <ctrl:BetterProgressBar Value="60"  Theme="Windows7" ShowPercentage="True" />
+
+            <!-- ── Ticks (Windows 11 base) ──────────────────────────────── -->
+            <TextBlock Text="Ticks above – 10 divisions" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <ctrl:BetterProgressBar Value="40" BarHeight="8" Ticks="Above" TickFrequency="10" />
+
+            <TextBlock Text="Ticks below – 5 divisions" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <ctrl:BetterProgressBar Value="60" BarHeight="8" Ticks="Below" TickFrequency="5" />
+
+            <TextBlock Text="Ticks above &amp; below + percentage – alignment check"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+            <ctrl:BetterProgressBar Value="75" BarHeight="8"
+                                    Ticks="Both" TickFrequency="4"
+                                    ShowPercentage="True" />
+
+            <!-- ── Theme: None (manual) ──────────────────────────────────── -->
+            <TextBlock Text="Theme: None – custom colors, 20 px track, 4 px fill stripe"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+            <ctrl:BetterProgressBar Value="55"
+                                    Theme="None"
+                                    BarHeight="20"
+                                    FillThickness="4" />
+
+            <!-- ── Interactive ───────────────────────────────────────────── -->
+            <TextBlock Text="Interactive – slider, states &amp; taskbar sync (Windows 11)"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+            <ctrl:BetterProgressBar x:Name="BarInteractive"
+                                    Theme="Windows11"
+                                    BarHeight="14"
+                                    Ticks="Both"
+                                    TickFrequency="10"
+                                    ShowPercentage="True"
+                                    SyncTaskbar="True" />
+            <Slider x:Name="SliderInteractive"
+                    Minimum="0" Maximum="100" Value="25"
+                    ValueChanged="SliderInteractive_ValueChanged" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Normal"        Click="SetStateNormal_Click" />
+                <Button Content="Warning"       Click="SetStateWarning_Click" />
+                <Button Content="Error"         Click="SetStateError_Click" />
+                <Button Content="Disabled"      Click="SetStateDisabled_Click" />
+                <Button Content="Indeterminate" Click="SetStateIndeterminate_Click" />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</Window>
