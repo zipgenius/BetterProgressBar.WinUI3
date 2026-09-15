@@ -87,7 +87,7 @@
             <!-- ── ContentDialog: indeterminate rendering ──────────────── -->
             <TextBlock Text="Indeterminate animation inside a ContentDialog"
                        Style="{StaticResource SubtitleTextBlockStyle}" />
-            <TextBlock Text="Opens the same minimal scenario used by the archive-rename dialog: no background task and no simulated delay."
+            <TextBlock Text="Opens the same minimal scenario used by the archive-rename dialog: no background task or simulated delay; the indeterminate state is also mirrored in the taskbar."
                        TextWrapping="Wrap" />
             <Button Content="Open indeterminate ContentDialog"
                     Click="ShowIndeterminateDialog_Click" />

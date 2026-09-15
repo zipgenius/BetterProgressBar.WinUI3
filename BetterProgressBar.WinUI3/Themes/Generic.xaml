@@ -25,8 +25,8 @@
                     <Grid x:Name="PART_RootGrid">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"    />
-                            <!-- Fixed width: always holds "100%" without resizing,
-                                 eliminating the column-resize flicker when digit count changes. -->
+                            <!-- Its width is enabled only when ShowPercentage is true.
+                                 When enabled, 48 px always holds "100%" without digit-resize flicker. -->
                             <ColumnDefinition Width="48" />
                         </Grid.ColumnDefinitions>
 

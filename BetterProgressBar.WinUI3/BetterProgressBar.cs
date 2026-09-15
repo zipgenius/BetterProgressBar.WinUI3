@@ -101,8 +101,23 @@ public sealed partial class BetterProgressBar : Control
     {
         DefaultStyleKey = typeof(BetterProgressBar);
         SizeChanged += (_, _) => { RebuildTicks(); UpdateFillRect(); StartIndeterminateAnimation(); };
-        Loaded      += (_, _) => ScheduleIndeterminateAnimation();
+        Loaded      += OnLoaded;
         Unloaded    += OnUnloaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        ScheduleIndeterminateAnimation();
+
+        // A taskbar button is not necessarily available while the host Window is
+        // being constructed. Reapply the current state once the control is live,
+        // then once more on the next UI turn after the shell has registered it.
+        SyncTaskbarState();
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (IsLoaded)
+                SyncTaskbarState();
+        });
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -362,7 +377,11 @@ public sealed partial class BetterProgressBar : Control
 
     private void UpdatePercentageText()
     {
+        if (_rootGrid is not null && _rootGrid.ColumnDefinitions.Count > 1)
+            _rootGrid.ColumnDefinitions[1].Width = new GridLength(ShowPercentage ? 48 : 0);
+
         if (_percentageText is null) return;
+
         _percentageText.Visibility = ShowPercentage ? Visibility.Visible : Visibility.Collapsed;
         if (!ShowPercentage) return;
         double range   = Maximum - Minimum;
