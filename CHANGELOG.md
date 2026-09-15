@@ -7,6 +7,21 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.7.0] – 2026-09-15
+
+### Breaking changes
+
+- **.NET 8.0 is no longer supported.** BetterProgressBar.WinUI3 now targets .NET 9.0 and .NET 10.0 only.
+  Consumers must upgrade to .NET 9.0 or later.
+
+### Changed
+
+- NuGet metadata and GitHub documentation now state the .NET 9.0-or-later requirement.
+- Demo project upgraded to .NET 9.0.
+- Version bump to 0.7.0.
+
+---
+
 ## [0.6.0] – 2025-XX-XX
 
 ### Added

@@ -27,16 +27,18 @@ including predefined themes that replicate the classic Windows 7, Windows 10 and
 
 ## Requirements
 
-- Windows App SDK 1.8+
-- .NET 8, 9, or 10
+- Windows App SDK 2.4+
+- .NET 9.0 or later
 - Windows 10 1809 (build 17763) or later
+
+> **Breaking change in 0.7.0:** .NET 8.0 is no longer supported. Upgrade consuming projects to .NET 9.0 or later.
 
 ---
 
 ## Installation
 
 ```
-dotnet add package BetterProgressBar.WinUI3
+dotnet add package BetterProgressBar.WinUI3 --version 0.7.0
 ```
 
 Or search for **BetterProgressBar.WinUI3** in the NuGet Package Manager inside Visual Studio.

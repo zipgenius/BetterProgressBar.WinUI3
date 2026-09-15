@@ -108,17 +108,15 @@
                                                Visibility="Collapsed"
                                                IsHitTestVisible="False" />
 
-                                    <!-- Indeterminate bar: shown only in Indeterminate state -->
-                                    <ProgressBar x:Name="PART_InnerProgressBar"
-                                                 Minimum="0"
-                                                 Maximum="100"
-                                                 Value="0"
-                                                 IsIndeterminate="False"
-                                                 HorizontalAlignment="Stretch"
-                                                 VerticalAlignment="Center"
-                                                 Background="Transparent"
-                                                 BorderThickness="0"
-                                                 Visibility="Collapsed" />
+                                    <!-- The indeterminate animation is owned by BetterProgressBar.
+                                         This avoids relying on a nested native ProgressBar template. -->
+                                    <Grid x:Name="PART_IndeterminateHost"
+                                          IsHitTestVisible="False">
+                                        <Rectangle x:Name="PART_IndeterminateIndicator"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Stretch"
+                                                   Visibility="Collapsed" />
+                                    </Grid>
 
                                 </Grid>
                             </Border>
@@ -159,9 +157,7 @@
                                 </VisualState>
                                 <VisualState x:Name="Indeterminate">
                                     <VisualState.Setters>
-                                        <Setter Target="PART_InnerProgressBar.Visibility"      Value="Visible"   />
-                                        <Setter Target="PART_InnerProgressBar.IsIndeterminate" Value="True"      />
-                                        <Setter Target="PART_FillRect.Visibility"              Value="Collapsed" />
+                                        <Setter Target="PART_FillRect.Visibility" Value="Collapsed" />
                                     </VisualState.Setters>
                                 </VisualState>
                             </VisualStateGroup>

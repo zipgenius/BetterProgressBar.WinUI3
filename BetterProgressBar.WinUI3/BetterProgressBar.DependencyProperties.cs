@@ -23,7 +23,6 @@ public sealed partial class BetterProgressBar
     private static void OnMinimumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (BetterProgressBar)d;
-        if (ctrl._innerBar is not null) ctrl._innerBar.Minimum = (double)e.NewValue;
         ctrl.Value = CoerceValue(ctrl.Value, ctrl.Minimum, ctrl.Maximum);
         ctrl.RebuildTicks();
         ctrl.UpdatePercentageText();
@@ -47,7 +46,6 @@ public sealed partial class BetterProgressBar
     private static void OnMaximumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (BetterProgressBar)d;
-        if (ctrl._innerBar is not null) ctrl._innerBar.Maximum = (double)e.NewValue;
         ctrl.Value = CoerceValue(ctrl.Value, ctrl.Minimum, ctrl.Maximum);
         ctrl.RebuildTicks();
         ctrl.UpdatePercentageText();

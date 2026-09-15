@@ -23,7 +23,8 @@ namespace ZipGenius.BetterProgressBar;
 [TemplatePart(Name = PartShimmerRect,      Type = typeof(Rectangle))]
 [TemplatePart(Name = PartGlassHighlight,   Type = typeof(Rectangle))]
 [TemplatePart(Name = PartStripeCanvas,     Type = typeof(Canvas))]
-[TemplatePart(Name = PartInnerProgressBar, Type = typeof(ProgressBar))]
+[TemplatePart(Name = PartIndeterminateHost, Type = typeof(Grid))]
+[TemplatePart(Name = PartIndeterminateIndicator, Type = typeof(Rectangle))]
 [TemplatePart(Name = PartTicksAbove,       Type = typeof(Canvas))]
 [TemplatePart(Name = PartTicksBelow,       Type = typeof(Canvas))]
 [TemplatePart(Name = PartPercentageText,   Type = typeof(TextBlock))]
@@ -45,7 +46,8 @@ public sealed partial class BetterProgressBar : Control
     private const string PartShimmerRect      = "PART_ShimmerRect";
     private const string PartGlassHighlight   = "PART_GlassHighlight";
     private const string PartStripeCanvas     = "PART_StripeCanvas";
-    private const string PartInnerProgressBar = "PART_InnerProgressBar";
+    private const string PartIndeterminateHost = "PART_IndeterminateHost";
+    private const string PartIndeterminateIndicator = "PART_IndeterminateIndicator";
     private const string PartTicksAbove       = "PART_TicksAbove";
     private const string PartTicksBelow       = "PART_TicksBelow";
     private const string PartPercentageText   = "PART_PercentageText";
@@ -70,7 +72,8 @@ public sealed partial class BetterProgressBar : Control
     private Rectangle?   _shimmerRect;
     private Rectangle?   _glassHighlight;
     private Canvas?      _stripeCanvas;
-    private ProgressBar? _innerBar;
+    private Grid?        _indeterminateHost;
+    private Rectangle?   _indeterminateIndicator;
     private Canvas?      _ticksAbove;
     private Canvas?      _ticksBelow;
     private TextBlock?   _percentageText;
@@ -83,6 +86,10 @@ public sealed partial class BetterProgressBar : Control
     private double       _shimmerHoldFrames;
     private ProgressBarTheme _lastDecoratedTheme = (ProgressBarTheme)(-1);
 
+    // ── Indeterminate animation state ────────────────────────────────────────
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _indeterminateTimer;
+    private double _indeterminateX;
+
     // ── Taskbar window handle ────────────────────────────────────────────────
     private nint _hwnd;
 
@@ -93,13 +100,15 @@ public sealed partial class BetterProgressBar : Control
     public BetterProgressBar()
     {
         DefaultStyleKey = typeof(BetterProgressBar);
-        SizeChanged += (_, _) => { RebuildTicks(); UpdateFillRect(); };
+        SizeChanged += (_, _) => { RebuildTicks(); UpdateFillRect(); StartIndeterminateAnimation(); };
+        Loaded      += (_, _) => ScheduleIndeterminateAnimation();
         Unloaded    += OnUnloaded;
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         StopShimmer();
+        StopIndeterminateAnimation();
         if (SyncTaskbar && _hwnd != 0)
             TaskbarProgressHelper.Clear(_hwnd);
     }
@@ -122,17 +131,11 @@ public sealed partial class BetterProgressBar : Control
         _shimmerRect    = GetTemplateChild(PartShimmerRect)      as Rectangle;
         _glassHighlight = GetTemplateChild(PartGlassHighlight)   as Rectangle;
         _stripeCanvas   = GetTemplateChild(PartStripeCanvas)     as Canvas;
-        _innerBar       = GetTemplateChild(PartInnerProgressBar) as ProgressBar;
+        _indeterminateHost = GetTemplateChild(PartIndeterminateHost) as Grid;
+        _indeterminateIndicator = GetTemplateChild(PartIndeterminateIndicator) as Rectangle;
         _ticksAbove     = GetTemplateChild(PartTicksAbove)       as Canvas;
         _ticksBelow     = GetTemplateChild(PartTicksBelow)       as Canvas;
         _percentageText = GetTemplateChild(PartPercentageText)   as TextBlock;
-
-        if (_innerBar is not null)
-        {
-            _innerBar.Minimum         = Minimum;
-            _innerBar.Maximum         = Maximum;
-            _innerBar.IsIndeterminate = (ProgressState == ProgressBarState.Indeterminate);
-        }
 
         ApplyTheme();
         ApplyBarHeight();
@@ -176,9 +179,6 @@ public sealed partial class BetterProgressBar : Control
         };
         VisualStateManager.GoToState(this, stateName, useTransitions);
 
-        if (_innerBar is not null)
-            _innerBar.IsIndeterminate = (ProgressState == ProgressBarState.Indeterminate);
-
         ApplyColors();
         SyncTaskbarState();
         UpdatePercentageText();
@@ -191,16 +191,16 @@ public sealed partial class BetterProgressBar : Control
             StopShimmer();
         else if (shouldShimmer && !shimmerActive)
             ScheduleShimmer();
+
+        if (ProgressState == ProgressBarState.Indeterminate)
+            ScheduleIndeterminateAnimation();
+        else
+            StopIndeterminateAnimation();
     }
 
     private void ApplyBarHeight()
     {
         if (_trackBorder is not null) _trackBorder.Height = BarHeight;
-        if (_innerBar is not null)
-        {
-            _innerBar.Height    = BarHeight;
-            _innerBar.MinHeight = 0;
-        }
         UpdateFillRect();
     }
 
@@ -268,7 +268,7 @@ public sealed partial class BetterProgressBar : Control
         }
 
         _fillRect.Fill = fillBrush;
-        if (_innerBar is not null) _innerBar.Foreground = solidBrush;
+        if (_indeterminateIndicator is not null) _indeterminateIndicator.Fill = solidBrush;
     }
 
     private void SyncTaskbarState()
@@ -506,6 +506,78 @@ public sealed partial class BetterProgressBar : Control
             if (_win7Vignette   is not null) _win7Vignette.Visibility    = Visibility.Collapsed;
             _lastDecoratedTheme = Theme;
         }
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // Indeterminate animation
+    // ────────────────────────────────────────────────────────────────────────
+
+    private void ScheduleIndeterminateAnimation()
+    {
+        _ = DispatcherQueue.TryEnqueue(
+            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+            StartIndeterminateAnimation);
+    }
+
+    private void StartIndeterminateAnimation()
+    {
+        if (ProgressState != ProgressBarState.Indeterminate ||
+            _indeterminateHost is null || _indeterminateIndicator is null)
+            return;
+
+        double width = _indeterminateHost.ActualWidth;
+        double height = _indeterminateHost.ActualHeight;
+        if (width <= 0 || height <= 0) return;
+
+        if (_indeterminateTimer is not null) return;
+
+        double bandWidth = Math.Max(30, width * 0.35);
+        _indeterminateIndicator.Width = bandWidth;
+        _indeterminateIndicator.Height = height;
+        _indeterminateIndicator.Visibility = Visibility.Visible;
+        _indeterminateIndicator.RenderTransform = new TranslateTransform { X = -bandWidth };
+        _indeterminateHost.Clip = new RectangleGeometry
+        {
+            Rect = new Windows.Foundation.Rect(0, 0, width, height)
+        };
+        _indeterminateX = -bandWidth;
+
+        _indeterminateTimer = DispatcherQueue.CreateTimer();
+        _indeterminateTimer.Interval = TimeSpan.FromMilliseconds(1000.0 / 60.0);
+        _indeterminateTimer.IsRepeating = true;
+        _indeterminateTimer.Tick += (_, _) => AdvanceIndeterminateAnimation();
+        _indeterminateTimer.Start();
+    }
+
+    private void AdvanceIndeterminateAnimation()
+    {
+        if (_indeterminateHost is null || _indeterminateIndicator is null) return;
+
+        double width = _indeterminateHost.ActualWidth;
+        double height = _indeterminateHost.ActualHeight;
+        if (width <= 0 || height <= 0) return;
+
+        double bandWidth = Math.Max(30, width * 0.35);
+        _indeterminateX += (width + bandWidth) / 90.0; // 1.5-second sweep at 60 fps.
+        if (_indeterminateX > width) _indeterminateX = -bandWidth;
+
+        _indeterminateIndicator.Width = bandWidth;
+        _indeterminateIndicator.Height = height;
+        if (_indeterminateIndicator.RenderTransform is TranslateTransform translate)
+            translate.X = _indeterminateX;
+
+        if (_indeterminateHost.Clip is RectangleGeometry clip)
+            clip.Rect = new Windows.Foundation.Rect(0, 0, width, height);
+    }
+
+    private void StopIndeterminateAnimation()
+    {
+        _indeterminateTimer?.Stop();
+        _indeterminateTimer = null;
+        if (_indeterminateIndicator is not null)
+            _indeterminateIndicator.Visibility = Visibility.Collapsed;
+        if (_indeterminateHost is not null)
+            _indeterminateHost.Clip = null;
     }
 
     // ────────────────────────────────────────────────────────────────────────
