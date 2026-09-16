@@ -23,8 +23,10 @@ namespace ZipGenius.BetterProgressBar;
 [TemplatePart(Name = PartShimmerRect,      Type = typeof(Rectangle))]
 [TemplatePart(Name = PartGlassHighlight,   Type = typeof(Rectangle))]
 [TemplatePart(Name = PartStripeCanvas,     Type = typeof(Canvas))]
+[TemplatePart(Name = PartIndeterminateProgressBar, Type = typeof(ProgressBar))]
 [TemplatePart(Name = PartIndeterminateHost, Type = typeof(Grid))]
 [TemplatePart(Name = PartIndeterminateIndicator, Type = typeof(Rectangle))]
+[TemplatePart(Name = PartIndeterminateGlassHighlight, Type = typeof(Rectangle))]
 [TemplatePart(Name = PartTicksAbove,       Type = typeof(Canvas))]
 [TemplatePart(Name = PartTicksBelow,       Type = typeof(Canvas))]
 [TemplatePart(Name = PartPercentageText,   Type = typeof(TextBlock))]
@@ -46,8 +48,10 @@ public sealed partial class BetterProgressBar : Control
     private const string PartShimmerRect      = "PART_ShimmerRect";
     private const string PartGlassHighlight   = "PART_GlassHighlight";
     private const string PartStripeCanvas     = "PART_StripeCanvas";
+    private const string PartIndeterminateProgressBar = "PART_IndeterminateProgressBar";
     private const string PartIndeterminateHost = "PART_IndeterminateHost";
     private const string PartIndeterminateIndicator = "PART_IndeterminateIndicator";
+    private const string PartIndeterminateGlassHighlight = "PART_IndeterminateGlassHighlight";
     private const string PartTicksAbove       = "PART_TicksAbove";
     private const string PartTicksBelow       = "PART_TicksBelow";
     private const string PartPercentageText   = "PART_PercentageText";
@@ -72,8 +76,10 @@ public sealed partial class BetterProgressBar : Control
     private Rectangle?   _shimmerRect;
     private Rectangle?   _glassHighlight;
     private Canvas?      _stripeCanvas;
+    private ProgressBar? _indeterminateProgressBar;
     private Grid?        _indeterminateHost;
     private Rectangle?   _indeterminateIndicator;
+    private Rectangle?   _indeterminateGlassHighlight;
     private Canvas?      _ticksAbove;
     private Canvas?      _ticksBelow;
     private TextBlock?   _percentageText;
@@ -86,7 +92,6 @@ public sealed partial class BetterProgressBar : Control
     private double       _shimmerHoldFrames;
     private ProgressBarTheme _lastDecoratedTheme = (ProgressBarTheme)(-1);
 
-    // ── Indeterminate animation state ────────────────────────────────────────
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? _indeterminateTimer;
     private double _indeterminateX;
 
@@ -108,7 +113,6 @@ public sealed partial class BetterProgressBar : Control
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         ScheduleIndeterminateAnimation();
-
         // A taskbar button is not necessarily available while the host Window is
         // being constructed. Reapply the current state once the control is live,
         // then once more on the next UI turn after the shell has registered it.
@@ -146,8 +150,10 @@ public sealed partial class BetterProgressBar : Control
         _shimmerRect    = GetTemplateChild(PartShimmerRect)      as Rectangle;
         _glassHighlight = GetTemplateChild(PartGlassHighlight)   as Rectangle;
         _stripeCanvas   = GetTemplateChild(PartStripeCanvas)     as Canvas;
+        _indeterminateProgressBar = GetTemplateChild(PartIndeterminateProgressBar) as ProgressBar;
         _indeterminateHost = GetTemplateChild(PartIndeterminateHost) as Grid;
         _indeterminateIndicator = GetTemplateChild(PartIndeterminateIndicator) as Rectangle;
+        _indeterminateGlassHighlight = GetTemplateChild(PartIndeterminateGlassHighlight) as Rectangle;
         _ticksAbove     = GetTemplateChild(PartTicksAbove)       as Canvas;
         _ticksBelow     = GetTemplateChild(PartTicksBelow)       as Canvas;
         _percentageText = GetTemplateChild(PartPercentageText)   as TextBlock;
@@ -211,6 +217,7 @@ public sealed partial class BetterProgressBar : Control
             ScheduleIndeterminateAnimation();
         else
             StopIndeterminateAnimation();
+
     }
 
     private void ApplyBarHeight()
@@ -283,7 +290,9 @@ public sealed partial class BetterProgressBar : Control
         }
 
         _fillRect.Fill = fillBrush;
-        if (_indeterminateIndicator is not null) _indeterminateIndicator.Fill = solidBrush;
+        if (_indeterminateIndicator is not null) _indeterminateIndicator.Fill = fillBrush;
+        if (_indeterminateGlassHighlight is not null)
+            _indeterminateGlassHighlight.Fill = Theme == ProgressBarTheme.Windows7 ? MakeWin7GlassBrush() : null;
     }
 
     private void SyncTaskbarState()
@@ -436,6 +445,7 @@ public sealed partial class BetterProgressBar : Control
         ApplyBarHeight();
         ApplyColors();
         UpdateFillRect();
+        UpdateVisualState(useTransitions: false);
         ScheduleDecoration();
     }
 
@@ -540,8 +550,23 @@ public sealed partial class BetterProgressBar : Control
 
     private void StartIndeterminateAnimation()
     {
-        if (ProgressState != ProgressBarState.Indeterminate ||
-            _indeterminateHost is null || _indeterminateIndicator is null)
+        if (ProgressState != ProgressBarState.Indeterminate)
+            return;
+
+        if (Theme == ProgressBarTheme.Windows11)
+        {
+            _indeterminateTimer?.Stop();
+            _indeterminateTimer = null;
+            if (_trackBorder is not null) _trackBorder.Visibility = Visibility.Collapsed;
+            if (_indeterminateIndicator is not null) _indeterminateIndicator.Visibility = Visibility.Collapsed;
+            if (_indeterminateGlassHighlight is not null) _indeterminateGlassHighlight.Visibility = Visibility.Collapsed;
+            if (_indeterminateProgressBar is not null) _indeterminateProgressBar.Visibility = Visibility.Visible;
+            return;
+        }
+
+        if (_indeterminateProgressBar is not null) _indeterminateProgressBar.Visibility = Visibility.Collapsed;
+        if (_trackBorder is not null) _trackBorder.Visibility = Visibility.Visible;
+        if (_indeterminateHost is null || _indeterminateIndicator is null)
             return;
 
         double width = _indeterminateHost.ActualWidth;
@@ -555,10 +580,14 @@ public sealed partial class BetterProgressBar : Control
         _indeterminateIndicator.Height = height;
         _indeterminateIndicator.Visibility = Visibility.Visible;
         _indeterminateIndicator.RenderTransform = new TranslateTransform { X = -bandWidth };
-        _indeterminateHost.Clip = new RectangleGeometry
+        if (_indeterminateGlassHighlight is not null)
         {
-            Rect = new Windows.Foundation.Rect(0, 0, width, height)
-        };
+            _indeterminateGlassHighlight.Width = bandWidth;
+            _indeterminateGlassHighlight.Height = Theme == ProgressBarTheme.Windows7 ? Math.Max(2, height * 0.40) : 0;
+            _indeterminateGlassHighlight.Visibility = Theme == ProgressBarTheme.Windows7 ? Visibility.Visible : Visibility.Collapsed;
+            _indeterminateGlassHighlight.RenderTransform = new TranslateTransform { X = -bandWidth };
+        }
+        _indeterminateHost.Clip = new RectangleGeometry { Rect = new Windows.Foundation.Rect(0, 0, width, height) };
         _indeterminateX = -bandWidth;
 
         _indeterminateTimer = DispatcherQueue.CreateTimer();
@@ -577,14 +606,20 @@ public sealed partial class BetterProgressBar : Control
         if (width <= 0 || height <= 0) return;
 
         double bandWidth = Math.Max(30, width * 0.35);
-        _indeterminateX += (width + bandWidth) / 90.0; // 1.5-second sweep at 60 fps.
+        _indeterminateX += (width + bandWidth) / 90.0;
         if (_indeterminateX > width) _indeterminateX = -bandWidth;
 
         _indeterminateIndicator.Width = bandWidth;
         _indeterminateIndicator.Height = height;
         if (_indeterminateIndicator.RenderTransform is TranslateTransform translate)
             translate.X = _indeterminateX;
-
+        if (_indeterminateGlassHighlight is not null)
+        {
+            _indeterminateGlassHighlight.Width = bandWidth;
+            _indeterminateGlassHighlight.Height = Theme == ProgressBarTheme.Windows7 ? Math.Max(2, height * 0.40) : 0;
+            if (_indeterminateGlassHighlight.RenderTransform is TranslateTransform glassTranslate)
+                glassTranslate.X = _indeterminateX;
+        }
         if (_indeterminateHost.Clip is RectangleGeometry clip)
             clip.Rect = new Windows.Foundation.Rect(0, 0, width, height);
     }
@@ -593,10 +628,11 @@ public sealed partial class BetterProgressBar : Control
     {
         _indeterminateTimer?.Stop();
         _indeterminateTimer = null;
-        if (_indeterminateIndicator is not null)
-            _indeterminateIndicator.Visibility = Visibility.Collapsed;
-        if (_indeterminateHost is not null)
-            _indeterminateHost.Clip = null;
+        if (_indeterminateIndicator is not null) _indeterminateIndicator.Visibility = Visibility.Collapsed;
+        if (_indeterminateGlassHighlight is not null) _indeterminateGlassHighlight.Visibility = Visibility.Collapsed;
+        if (_indeterminateProgressBar is not null) _indeterminateProgressBar.Visibility = Visibility.Collapsed;
+        if (_indeterminateHost is not null) _indeterminateHost.Clip = null;
+        if (_trackBorder is not null) _trackBorder.Visibility = Visibility.Visible;
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -714,6 +750,13 @@ public sealed partial class BetterProgressBar : Control
 
         double highlightH = Math.Max(2, h * 0.40);
 
+        _glassHighlight.Fill       = MakeWin7GlassBrush();
+        _glassHighlight.Height     = highlightH;
+        _glassHighlight.Visibility = Visibility.Visible;
+    }
+
+    private static LinearGradientBrush MakeWin7GlassBrush()
+    {
         var brush = new LinearGradientBrush
         {
             StartPoint = new Windows.Foundation.Point(0, 0),
@@ -722,10 +765,7 @@ public sealed partial class BetterProgressBar : Control
         brush.GradientStops.Add(new GradientStop { Color = Color.FromArgb(0xAF, 0xF3, 0xF3, 0xF3), Offset = 0.00 });
         brush.GradientStops.Add(new GradientStop { Color = Color.FromArgb(0xAF, 0xFC, 0xFC, 0xFC), Offset = 0.50 });
         brush.GradientStops.Add(new GradientStop { Color = Color.FromArgb(0xAF, 0xDB, 0xDB, 0xDB), Offset = 1.00 });
-
-        _glassHighlight.Fill       = brush;
-        _glassHighlight.Height     = highlightH;
-        _glassHighlight.Visibility = Visibility.Visible;
+        return brush;
     }
 
     private void DrawWin7Vignette()

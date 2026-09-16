@@ -108,15 +108,26 @@
                                                Visibility="Collapsed"
                                                IsHitTestVisible="False" />
 
-                                    <!-- The indeterminate animation is owned by BetterProgressBar.
-                                         This avoids relying on a nested native ProgressBar template. -->
                                     <Grid x:Name="PART_IndeterminateHost"
                                           IsHitTestVisible="False">
                                         <Rectangle x:Name="PART_IndeterminateIndicator"
                                                    HorizontalAlignment="Left"
                                                    VerticalAlignment="Stretch"
                                                    Visibility="Collapsed" />
+                                        <Rectangle x:Name="PART_IndeterminateGlassHighlight"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Top"
+                                                   Visibility="Collapsed" />
                                     </Grid>
+
+                                    <!-- Used for the Windows 11 theme only. -->
+                                    <ProgressBar x:Name="PART_IndeterminateProgressBar"
+                                                 IsIndeterminate="True"
+                                                 Height="{TemplateBinding BarHeight}"
+                                                 HorizontalAlignment="Stretch"
+                                                 VerticalAlignment="Center"
+                                                 Visibility="Collapsed"
+                                                 IsHitTestVisible="False" />
 
                                 </Grid>
                             </Border>

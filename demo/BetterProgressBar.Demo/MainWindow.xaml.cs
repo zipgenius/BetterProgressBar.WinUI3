@@ -51,48 +51,12 @@ public sealed partial class MainWindow : Window
 
     private async void ShowIndeterminateDialog_Click(object sender, RoutedEventArgs e)
     {
-        nint ownerWindow = WindowNative.GetWindowHandle(this);
-        var progressBar = new ZipGenius.BetterProgressBar.BetterProgressBar
+        var dialog = new IndeterminateProgressDialog
         {
-            Theme = ProgressBarTheme.Windows11,
-            IsIndeterminate = true,
-            ProgressState = ProgressBarState.Indeterminate,
-            SyncTaskbar = true
-        };
-
-        var dialog = new ContentDialog
-        {
-            Title = "Indeterminate BetterProgressBar",
-            Content = new StackPanel
-            {
-                Spacing = 12,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = "No operation is running. The UI dispatcher is free while this dialog is open.",
-                        TextWrapping = TextWrapping.Wrap
-                    },
-                    progressBar
-                }
-            },
-            CloseButtonText = "Close",
             XamlRoot = ((FrameworkElement)Content).XamlRoot
         };
 
-        // ContentDialog has no HWND of its own. Assign the main window only after
-        // the dialog is visible so the shell can associate its taskbar button.
-        dialog.Opened += (_, _) => progressBar.SetTaskbarOwnerWindow(ownerWindow);
-
-        try
-        {
-            await dialog.ShowAsync();
-        }
-        finally
-        {
-            // Clear the owner-window overlay as soon as the dialog closes.
-            progressBar.SyncTaskbar = false;
-        }
+        await dialog.ShowAsync();
     }
 
     private async void RunHeavyOperation_Click(object sender, RoutedEventArgs e)
