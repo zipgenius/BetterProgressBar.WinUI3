@@ -12,10 +12,10 @@
 
     <!-- NuGet Package Metadata -->
     <PackageId>BetterProgressBar.WinUI3</PackageId>
-    <Version>0.7.0</Version>
+    <Version>0.8.0</Version>
     <Authors>ZipGenius</Authors>
     <Company>ZipGenius</Company>
-    <Description>An enhanced WinUI 3 ProgressBar for .NET 9.0 or later, with taskbar progress integration, tick marks, named states, predefined themes, an optional percentage label, configurable fill thickness, and full color and height customization.</Description>
+    <Description>Visual improvement and on par with WinUI ProgressBar. An enhanced WinUI 3 ProgressBar for .NET 9.0 or later, with taskbar progress integration, tick marks, named states, predefined themes, an optional percentage label, configurable fill thickness, and full color and height customization.</Description>
     <PackageTags>WinUI3;ProgressBar;Taskbar;WinUI;Controls;DotNet9;DotNet10;Themes;Windows11;Windows10;Windows7</PackageTags>
     <PackageProjectUrl>https://github.com/zipgenius/BetterProgressBar.WinUI3</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zipgenius/BetterProgressBar.WinUI3</RepositoryUrl>

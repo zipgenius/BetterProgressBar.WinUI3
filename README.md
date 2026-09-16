@@ -5,6 +5,7 @@
 [![CI](https://github.com/zipgenius/BetterProgressBar.WinUI3/actions/workflows/ci.yml/badge.svg)](https://github.com/zipgenius/BetterProgressBar.WinUI3/actions)
 
 An enhanced **WinUI 3** `ProgressBar` control published by [ZipGenius](https://www.zipgenius.it).
+Visual improvement and on par with WinUI ProgressBar.
 It mirrors the full API of the standard WinUI 3 `ProgressBar` and adds a rich set of opt-in features,
 including predefined themes that replicate the classic Windows 7, Windows 10 and Windows 11 progress bar looks.
 
@@ -38,7 +39,7 @@ including predefined themes that replicate the classic Windows 7, Windows 10 and
 ## Installation
 
 ```
-dotnet add package BetterProgressBar.WinUI3 --version 0.7.0
+dotnet add package BetterProgressBar.WinUI3 --version 0.8.0
 ```
 
 Or search for **BetterProgressBar.WinUI3** in the NuGet Package Manager inside Visual Studio.

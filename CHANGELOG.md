@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.0] – 2026-09-16
+
+### Changed
+
+- Visual improvement and on par with WinUI ProgressBar.
+- NuGet metadata and GitHub documentation updated.
+- Version bump to 0.8.0.
+
+---
+
 ## [0.7.0] – 2026-09-15
 
 ### Breaking changes
