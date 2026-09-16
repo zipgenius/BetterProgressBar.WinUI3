@@ -23,24 +23,19 @@ internal enum TaskbarProgressState : int
 internal interface ITaskbarList3
 {
     // ITaskbarList
-    [PreserveSig] void HrInit();
-    [PreserveSig] void AddTab(nint hwnd);
-    [PreserveSig] void DeleteTab(nint hwnd);
-    [PreserveSig] void ActivateTab(nint hwnd);
-    [PreserveSig] void SetActiveAlt(nint hwnd);
+    [PreserveSig] int HrInit();
+    [PreserveSig] int AddTab(nint hwnd);
+    [PreserveSig] int DeleteTab(nint hwnd);
+    [PreserveSig] int ActivateTab(nint hwnd);
+    [PreserveSig] int SetActiveAlt(nint hwnd);
 
     // ITaskbarList2
-    [PreserveSig] void MarkFullscreenWindow(nint hwnd, [MarshalAs(UnmanagedType.Bool)] bool fFullscreen);
+    [PreserveSig] int MarkFullscreenWindow(nint hwnd, [MarshalAs(UnmanagedType.Bool)] bool fFullscreen);
 
     // ITaskbarList3
-    [PreserveSig] void SetProgressValue(nint hwnd, ulong ullCompleted, ulong ullTotal);
-    [PreserveSig] void SetProgressState(nint hwnd, TaskbarProgressState tbpFlags);
+    [PreserveSig] int SetProgressValue(nint hwnd, ulong ullCompleted, ulong ullTotal);
+    [PreserveSig] int SetProgressState(nint hwnd, TaskbarProgressState tbpFlags);
 }
-
-[ComImport]
-[Guid("56fdf344-fd6d-11d0-958a-006097c9a090")]
-[ClassInterface(ClassInterfaceType.None)]
-internal class TaskbarInstance { }
 
 /// <summary>
 /// Singleton helper that wraps <c>ITaskbarList3</c> to update the Windows taskbar
@@ -49,6 +44,7 @@ internal class TaskbarInstance { }
 /// </summary>
 internal static class TaskbarProgressHelper
 {
+    private static readonly Guid TaskbarListClsid = new("56fdf344-fd6d-11d0-958a-006097c9a090");
     private static ITaskbarList3? _taskbar;
     private static bool _initialized;
 
@@ -58,8 +54,13 @@ internal static class TaskbarProgressHelper
         _initialized = true;
         try
         {
-            _taskbar = (ITaskbarList3)new TaskbarInstance();
-            _taskbar.HrInit();
+            // Activator performs a COM QueryInterface for ITaskbarList3.  A
+            // direct construction of the COM-import class can yield a runtime
+            // callable wrapper that does not expose this interface.
+            _taskbar = (ITaskbarList3)Activator.CreateInstance(
+                Type.GetTypeFromCLSID(TaskbarListClsid)!)!;
+            if (_taskbar.HrInit() < 0)
+                _taskbar = null;
         }
         catch
         {
@@ -82,7 +83,7 @@ internal static class TaskbarProgressHelper
         {
             ulong completed = (ulong)Math.Max(0, Math.Min(value, maximum));
             ulong total     = (ulong)Math.Max(1, maximum);
-            tb.SetProgressValue(hwnd, completed, total);
+            _ = tb.SetProgressValue(hwnd, completed, total);
         }
         catch { /* best-effort */ }
     }
@@ -107,7 +108,7 @@ internal static class TaskbarProgressHelper
                 ProgressBarState.Disabled      => TaskbarProgressState.NoProgress,
                 _                              => TaskbarProgressState.Normal
             };
-            tb.SetProgressState(hwnd, tbState);
+            _ = tb.SetProgressState(hwnd, tbState);
         }
         catch { /* best-effort */ }
     }
@@ -120,7 +121,7 @@ internal static class TaskbarProgressHelper
     {
         var tb = GetTaskbar();
         if (tb is null || hwnd == 0) return;
-        try { tb.SetProgressState(hwnd, TaskbarProgressState.NoProgress); }
+        try { _ = tb.SetProgressState(hwnd, TaskbarProgressState.NoProgress); }
         catch { /* best-effort */ }
     }
 }
